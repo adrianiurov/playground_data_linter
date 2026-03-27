@@ -1,5 +1,8 @@
 name: DataLinter PUSH run
 env:
+  #setup
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
   #directories inside the docker container
   DOCKER_CONTAINER_CODE_DIR: "/tmp"                                    
   DOCKER_CONTAINER_DATA_DIR: "/_data"                                    
@@ -35,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout current project repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: ${{ env.PROJECT_DIR_NAME }}
       - id: pull_docker_image
