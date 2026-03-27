@@ -1,0 +1,79 @@
+name: DataLinter PULL_REQUEST run
+env:
+  #directories inside the docker container
+  DOCKER_CONTAINER_CODE_DIR: "/tmp"                                    
+  DOCKER_CONTAINER_DATA_DIR: "/_data"                                    
+  DOCKER_CONTAINER_CONFIG_DIR: "/_config"                                    
+
+  #directories in your repository
+  REPO_CODE_DIR: "/test/code"                    
+  REPO_DATA_DIR: "/test/data"                    
+  REPO_CONFIG_DIR: "/config"
+
+  #input files in your repository
+  #in the data dir
+  TARGET_DATA_FILE: "imbalanced_data.csv"
+  #in the code dir
+  TARGET_CODE_FILE: "r_snippet_imbalanced.r"
+  #in the config dir
+  CONFIG_FILE: "r_modelling_config.toml"
+
+  #other parameters
+  LOG_LEVEL: debug
+
+  #internal constants
+  PROJECT_DIR_NAME: "target_R_project"
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  build:
+    name: DataLinter Docker ${{ github.event_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current project repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.PROJECT_DIR_NAME }}
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'Hello from DataLinter!'
+            })
+      - id: pull_docker_image
+        name: Pull DataLinter Docker image
+        run: |
+          docker pull ghcr.io/zgornel/datalinter-compiled:latest
+      - id: run_docker_image
+        name: Run DataLinter Container
+        run: |
+          echo 'DATA_DUMP<<EOF' >> $GITHUB_OUTPUT
+          echo '```' >> $GITHUB_OUTPUT
+          docker run \
+                  --volume=${{ github.workspace }}/${{ env.PROJECT_DIR_NAME }}/${{ env.REPO_CODE_DIR }}:${{ env.DOCKER_CONTAINER_CODE_DIR }} \
+                  --volume=${{ github.workspace }}/${{ env.PROJECT_DIR_NAME }}/${{ env.REPO_DATA_DIR }}:${{ env.DOCKER_CONTAINER_DATA_DIR }} \
+                  --volume=${{ github.workspace }}/${{ env.PROJECT_DIR_NAME }}/${{ env.REPO_CONFIG_DIR }}:${{ env.DOCKER_CONTAINER_CONFIG_DIR }} \
+                  ghcr.io/zgornel/datalinter-compiled:latest \
+                  /datalinter/bin/datalinter \
+                        ${{ env.DOCKER_CONTAINER_DATA_DIR }}/${{ env.TARGET_DATA_FILE }} \
+                        --code-path ${{ env.DOCKER_CONTAINER_CODE_DIR }}/${{ env.TARGET_CODE_FILE }} \
+                        --config-path ${{ env.DOCKER_CONTAINER_CONFIG_DIR }}/${{ env.CONFIG_FILE }} \
+                        --print-exceptions \
+                        --log-level ${{ env.LOG_LEVEL }} >> $GITHUB_OUTPUT
+          echo '```' >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+      - name: Print output
+        run: echo "${{ steps.run_docker_image.outputs.DATA_DUMP }}"
+      - name: Edit PR comment
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: ${{steps.run_docker_image.outputs.DATA_DUMP}}
+          comment_includes: 'Hello from DataLinter!'
+
+
