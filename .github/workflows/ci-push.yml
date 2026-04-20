@@ -13,11 +13,6 @@ jobs:
     name: DataLinter Docker ${{ github.event_name }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout current project repository
-        uses: actions/checkout@v6
-        with:
-          path: ${{ env.PROJECT_DIR_NAME }}
-
       - id: datalinter
         name: Run DataLinter
         uses: ./.github/actions/datalinter

@@ -20,6 +20,11 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Checkout current project repository
+      uses: actions/checkout@v6
+      with:
+        path: ${{ env.PROJECT_DIR_NAME }}
+
     - id: split_paths
       name: Split input paths into directories and filenames
       shell: bash
@@ -69,3 +74,15 @@ runs:
                       --log-level ${LOG_LEVEL} >> $GITHUB_OUTPUT 2>&1
         echo '```' >> $GITHUB_OUTPUT
         echo 'EOF' >> $GITHUB_OUTPUT
+
+    - name: Print output
+      if: github.event_name == 'pull_request'
+      shell: bash
+      run: echo "${{ steps.run_docker_image.outputs.DATA_DUMP }}"
+
+    - name: Edit PR comment
+      if: github.event_name == 'pull_request'
+      uses: thollander/actions-comment-pull-request@v3
+      with:
+        message: ${{ steps.run_docker_image.outputs.DATA_DUMP }}
+        comment_tag: datalinter
