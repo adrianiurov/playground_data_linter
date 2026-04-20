@@ -1,30 +1,6 @@
 name: DataLinter PUSH run
 env:
-  #setup
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
-  #directories inside the docker container
-  DOCKER_CONTAINER_CODE_DIR: "/tmp"                                    
-  DOCKER_CONTAINER_DATA_DIR: "/_data"                                    
-  DOCKER_CONTAINER_CONFIG_DIR: "/_config"                                    
-
-  #directories in your repository
-  REPO_CODE_DIR: "/test/code"                    
-  REPO_DATA_DIR: "/test/data"                    
-  REPO_CONFIG_DIR: "/config"
-
-  #input files in your repository
-  #in the data dir
-  TARGET_DATA_FILE: "imbalanced_data.csv"
-  #in the code dir
-  TARGET_CODE_FILE: "r_snippet_imbalanced.r"
-  #in the config dir
-  CONFIG_FILE: "r_modelling_config.toml"
-
-  #other parameters
-  LOG_LEVEL: debug
-
-  #internal constants
   PROJECT_DIR_NAME: "target_R_project"
 on:
   push:
@@ -37,25 +13,10 @@ jobs:
     name: DataLinter Docker ${{ github.event_name }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout current project repository
-        uses: actions/checkout@v6
+      - id: datalinter
+        name: Run DataLinter
+        uses: ./.github/actions/datalinter
         with:
-          path: ${{ env.PROJECT_DIR_NAME }}
-      - id: pull_docker_image
-        name: Pull DataLinter Docker image
-        run: |
-          docker pull ghcr.io/zgornel/datalinter-compiled:latest
-      - id: run_docker_image
-        name: Run DataLinter Container
-        run: |
-          docker run \
-                  --volume=${{ github.workspace }}/${{ env.PROJECT_DIR_NAME }}/${{ env.REPO_CODE_DIR }}:${{ env.DOCKER_CONTAINER_CODE_DIR }} \
-                  --volume=${{ github.workspace }}/${{ env.PROJECT_DIR_NAME }}/${{ env.REPO_DATA_DIR }}:${{ env.DOCKER_CONTAINER_DATA_DIR }} \
-                  --volume=${{ github.workspace }}/${{ env.PROJECT_DIR_NAME }}/${{ env.REPO_CONFIG_DIR }}:${{ env.DOCKER_CONTAINER_CONFIG_DIR }} \
-                  ghcr.io/zgornel/datalinter-compiled:latest \
-                  /datalinter/bin/datalinter \
-                        ${{ env.DOCKER_CONTAINER_DATA_DIR }}/${{ env.TARGET_DATA_FILE }} \
-                        --code-path ${{ env.DOCKER_CONTAINER_CODE_DIR }}/${{ env.TARGET_CODE_FILE }} \
-                        --config-path ${{ env.DOCKER_CONTAINER_CONFIG_DIR }}/${{ env.CONFIG_FILE }} \
-                        --print-exceptions \
-                        --log-level ${{ env.LOG_LEVEL }} 
+          data-path: 'test/data/imbalanced_data.csv'
+          code-path: 'test/code/r_snippet_imbalanced.r'
+          config-path: 'config/r_modelling_config.toml'
