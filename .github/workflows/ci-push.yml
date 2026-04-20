@@ -14,8 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: datalinter
-        name: Run DataLinter
-        uses: ./.github/actions/datalinter
+        name: Run DataLinter - with my custom action
+        uses: adrianiurov/my-ci-action@v1
         with:
           data-path: 'test/data/imbalanced_data.csv'
           code-path: 'test/code/r_snippet_imbalanced.r'
