@@ -23,6 +23,7 @@ jobs:
         name: Run DataLinter - with my custom action
         uses: OxoaResearch/DataLinter-Action@v1
         with:
+          target-project-checkout-dir: ${{ env.PROJECT_DIR_NAME }}
           data-path: 'test/data/imbalanced_data.csv'
           code-path: 'test/code/r_snippet_imbalanced.r'
           config-path: 'config/r_modelling_config.toml'
